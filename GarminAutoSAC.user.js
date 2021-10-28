@@ -1,8 +1,9 @@
 // ==UserScript==
-// @name        Adding automated SAC calculation (and RMV) to Garmin Connect
+// @name        Adding automated SAC (and RMV) calculation to Garmin Connect
 // @namespace   https://www.warrenprior.com/garminsac/
-// @description Adding automated SAC calculation (and RMV) to Garmin Connect
+// @description Adding automated SAC (and RMV) calculation to Garmin Connect
 // @version     0.1
+// @match       https://connect.garmin.com/modern/activity/manual/*/edit#
 // @match       https://connect.garmin.com/modern/activity/manual/*/edit
 // ==/UserScript==
 
@@ -22,6 +23,9 @@
 
 // time interval in ms for periodically checking for the add/edit tank modal
 const modalCheckInterval = 500;
+
+// round SAC to this many decimal points
+const numDecPoints = 2;
 
 // trigger the period check for the tank modal
 setTimeout(checkForModal, modalCheckInterval);
@@ -66,13 +70,13 @@ This function performs SAC caclculations and populated the SAC field in the tank
 
 function CalcSACAction()
 {
-
+    // * 1 to force conversion of string to int
     var startingPressure = document.getElementById("startingPressure").value;
     var endingPressure = document.getElementById("endingPressure").value;
     var tankSize = document.getElementById("tankSize").value;
     var averageDepth = document.getElementById("averageDepth").value;
-    var bottomMinutes = document.querySelector('[id^="bottomTime_"][id$="-time-minute"]').value;
-    var bottomHours = document.querySelector('[id^="bottomTime_"][id$="-time-hour"]').value;
+    var bottomMinutes = document.querySelector('[id^="bottomTime_"][id$="-time-minute"]').value * 1;
+    var bottomHours = document.querySelector('[id^="bottomTime_"][id$="-time-hour"]').value * 1;
     var ata = 0;
 
     // calculate pressure depending on whether depth is in feet or meters
@@ -98,15 +102,15 @@ function CalcSACAction()
     bottomMinutes = bottomMinutes + (bottomHours * 60);
 
     // confirm gas used > 0 and confirm tank size > 0
-    if ((startingPressure - endingPressure <= 0) || (tankSize <= 0))
+    if (startingPressure - endingPressure <= 0)
     {
         document.getElementById("sacRate").value = "";
         return;
     }
 
     // SAC calculation
-    var sacRate = sacRate = (((startingPressure - endingPressure)) / bottomMinutes) / ata;
+    var sacRate = (startingPressure - endingPressure) / (bottomMinutes * ata);
 
     // round to 3 decimal places
-    document.getElementById("sacRate").value = sacRate.toFixed(3);
+    document.getElementById("sacRate").value = sacRate.toFixed(numDecPoints);
 }

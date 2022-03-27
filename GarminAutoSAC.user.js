@@ -2,9 +2,10 @@
 // @name        Adding automated SAC (and RMV) calculation to Garmin Connect
 // @namespace   https://www.warrenprior.com/garminsac/
 // @description Adding automated SAC (and RMV) calculation to Garmin Connect
-// @version     0.3
+// @version     0.4
 // @match       https://connect.garmin.com/modern/activity/manual?typeKey=diving
 // @match       https://connect.garmin.com/modern/activity/manual/*/edit
+// @match       https://connect.garmin.com/*
 // ==/UserScript==
 
 /*** USER NOTES ***********************************************************************

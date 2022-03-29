@@ -52,7 +52,6 @@ function checkForModal()
     setTimeout(checkForModal, modalCheckInterval);
 }
 
-
 /**************************************************************************************
 This function creates a new cell by appending a div
 **************************************************************************************/

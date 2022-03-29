@@ -2,7 +2,7 @@
 // @name        Adding automated SAC (and RMV) calculation to Garmin Connect
 // @namespace   https://www.warrenprior.com/garminsac/
 // @description Adding automated SAC (and RMV) calculation to Garmin Connect
-// @version     0.4
+// @version     0.5
 // @match       https://connect.garmin.com/modern/activity/manual?typeKey=diving
 // @match       https://connect.garmin.com/modern/activity/manual/*/edit
 // @match       https://connect.garmin.com/*
@@ -13,11 +13,13 @@
 * This currently assumes only a single tank
 
 * This has been tested with TamperMonkey, not GreaseMonkey
+
+* 0.5 - Added RMV to tables
 **************************************************************************************/
 
 /*** TODO *****************************************************************************
 * Build support for multiple tanks
-* Add an RMV column to the tanks table
+* Add unit for RMV
 * Consider adding a button to populate values for previous dives
   (rather than needeing to update values to trigger the calculation)
 **************************************************************************************/
@@ -28,8 +30,9 @@ const modalCheckInterval = 500;
 // round SAC to this many decimal points
 const numDecPoints = 2;
 
-// trigger the period check for the tank modal
+// trigger the period check for the tank modal and gas table
 setTimeout(checkForModal, modalCheckInterval);
+setTimeout(checkForTankTable, modalCheckInterval);
 
 /**************************************************************************************
 This function periodically checks whether the add/edit tank modal has been created,
@@ -47,6 +50,92 @@ function checkForModal()
     }
 
     setTimeout(checkForModal, modalCheckInterval);
+}
+
+
+/**************************************************************************************
+This function creates a new cell by appending a div
+**************************************************************************************/
+
+function createCell(cell, text, cellType)
+{
+    cell.outerHTML = '<th>' + text + '</th>';
+}
+
+/**************************************************************************************
+This function periodically checks whether the tank/gas table has been created,
+and adds a new column for RMV
+**************************************************************************************/
+
+function checkForTankTable()
+{
+    var tankTableClass = document.getElementsByClassName('table gases-and-tanks-table'),
+        gasesTableClass = document.getElementsByClassName('table tanks-and-gases-table'),
+        tankTable, i, screen, tankSizeCell, pressureRateCell, tableWidth, addColumn;
+
+    // get the table depending on whether we are in the view or edit screen
+    if (tankTableClass.length >= 1)
+    {
+        tankTable = tankTableClass[0];
+        screen = 'view';
+        tankSizeCell = 5;
+        pressureRateCell = 9;
+        tableWidth = 10;
+        addColumn = 10;
+    }
+    else if (gasesTableClass.length >= 1)
+    {
+        tankTable = gasesTableClass[0];
+        screen = 'edit';
+        tankSizeCell = 3;
+        pressureRateCell = 6;
+        tableWidth = 9;
+        addColumn = 7;
+    }
+    else
+    {
+        screen = 'neither'
+    }
+
+    // if we have a table
+    if(screen != 'neither')
+    {
+        // check the column has not already been added
+        if(tankTable.rows[0].cells.length == tableWidth)
+        {
+            // loop through all tanks
+            for (i = 0; i < tankTable.rows.length; i++)
+            {
+                // add the new heading
+                if(i == 0)
+                {
+                    tankTable.rows[i].insertCell(addColumn).outerHTML = '<th>RMV</th>'
+                }
+                //add the cell/column
+                else
+                {
+                    // get the tank size and pressure rate
+                    var tankSize = tankTable.rows[i].cells[tankSizeCell].innerHTML.replace(/[^0-9\.]+/g,""),
+                        pressureRate = tankTable.rows[i].cells[pressureRateCell].innerHTML.replace(/[^0-9\.]+/g,""),
+                        RMV;
+
+                    // confirm you have values for tank size and pressure rate
+                    if(isNaN(tankSize) || isNaN(pressureRate) || tankSize == '' || pressureRate == '')
+                    {
+                        RMV = '--';
+                    }
+                    else
+                    {
+                        RMV = tankSize * pressureRate;
+                    }
+
+                    tankTable.rows[i].insertCell(addColumn).outerHTML = '<td>' + RMV + '</td>'
+                }
+            }
+        }
+    }
+
+    setTimeout(checkForTankTable, modalCheckInterval);
 }
 
 /**************************************************************************************
